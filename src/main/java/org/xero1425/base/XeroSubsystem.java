@@ -3,7 +3,10 @@ package org.xero1425.base;
 import java.util.Map;
 import org.xero1425.misc.MessageLogger;
 import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 public abstract class XeroSubsystem extends SubsystemBase implements ISubsystemSim {
 
@@ -45,4 +48,12 @@ public abstract class XeroSubsystem extends SubsystemBase implements ISubsystemS
     }
 
     public abstract Map<String, TalonFX> getCTREMotors() ;
+
+    public Command getQuasistatic(String name, Direction dir) {
+        return null ;
+    }
+
+    public Command getDynamic(String name, Direction dir) {
+        return null ;
+    }    
 }

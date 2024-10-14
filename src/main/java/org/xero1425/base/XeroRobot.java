@@ -31,6 +31,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -40,7 +41,9 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.BuildConstants;
 import frc.robot.generated.SwerveConstants;
 import frc.robot.generated.TunerConstantsCompetition;
@@ -51,7 +54,7 @@ public abstract class XeroRobot extends LoggedRobot {
     private static XeroRobot robot_ = null ;
 
     // The path following paths
-    private XeroPathManager paths_ ;    
+    private XeroPathManager paths_ ;
 
     private MessageLogger logger_ ;
     private RobotPaths robot_paths_ ;
@@ -66,9 +69,12 @@ public abstract class XeroRobot extends LoggedRobot {
     private CommandSwerveDrivetrain db_ ;
     private SwerveRequest.SwerveDriveBrake brake_ ;
     private SwerveRequest.RobotCentric pov_move_;
-    private SwerveRequest.FieldCentric drive_ ;     
+    private SwerveRequest.FieldCentric drive_ ;
 
     private OISubsystem oi_ ;
+
+    private String char_subsystem_ ;
+    private String char_motor_ ;
 
     private HashMap<String, Double> periodic_times_ ;
     private HashMap<String, ISubsystemSim> subsystems_ ;
@@ -82,14 +88,16 @@ public abstract class XeroRobot extends LoggedRobot {
         if (robot_ != null) {
             throw new RuntimeException("XeroRobot is a singleton class") ;
         }
-        robot_ = this ;        
+        robot_ = this ;
         subsystems_ = new HashMap<>() ;
         periodic_times_ = new HashMap<>() ;
+
+        setFieldLayout(AprilTagFields.kDefaultField.loadAprilTagLayoutField()) ;
 
         drive_ = null ;
         pov_move_ = null ;
         brake_ = null ;
-       
+
         auto_modes_created_ = false ;
         automodes_ = new ArrayList<>() ;
         auto_mode_ = null;
@@ -110,7 +118,7 @@ public abstract class XeroRobot extends LoggedRobot {
             String str = SimArgs.InputFileName;
             if (str == null)
                 str = getSimulationFileName() ;
-                            
+
             if (str == null) {
                 System.out.println("The code is setup to simulate, but the derived robot class did not provide a stimulus file") ;
                 System.out.println("Not initializing the Xero1425 Simulation engine - assuming Romi robot") ;
@@ -120,17 +128,20 @@ public abstract class XeroRobot extends LoggedRobot {
                 addRobotSimulationModels() ;
                 SimulationEngine.getInstance().initAll(str) ;
             }
-        }    
+        }
     }
 
     public abstract boolean isCharMode() ;
     public abstract String  getSimulationFileName() ;
     public abstract String getSimulationAutoMode() ;
-    protected abstract String getName() ;    
-    protected abstract String getPracticeSerialNumber() ;    
+    protected abstract String getName() ;
+    protected abstract String getPracticeSerialNumber() ;
     protected abstract void createCompetitionAutoModes() ;
     protected abstract void addRobotSimulationModels() ;
     protected abstract OISubsystem createOISubsystem() ;
+    protected abstract void robotSpecificBindings() ;
+    protected abstract String getCharSubsystem() ;
+    protected abstract String getCharMotor() ;
 
     public OISubsystem getOISubsystem() {
         return oi_ ;
@@ -183,7 +194,43 @@ public abstract class XeroRobot extends LoggedRobot {
         //
         createDriveBase() ;
 
-        // 
+        char_subsystem_ = getCharSubsystem() ;
+        char_motor_ = getCharMotor() ;
+
+        if (isCharMode()) {
+            if (char_subsystem_ != null && char_motor_ != null) {
+                charBindings(char_subsystem_, char_motor_) ;
+            }
+        }
+        else {
+            standardDriveBaseBindings();
+            robotSpecificBindings() ;
+        }
+
+        db_.registerTelemetry(telemetry_::telemeterize) ;
+    }
+
+    private void charBindings(String subsystem, String motor) {
+        try {
+            XeroSubsystem subsys = (XeroSubsystem)getSubsystemByName(subsystem) ;
+            Command fquasi = subsys.getQuasistatic(motor, Direction.kForward) ;
+            Command rquasi = subsys.getQuasistatic(motor, Direction.kReverse) ;
+            Command fdynamic = subsys.getDynamic(motor, Direction.kForward) ;
+            Command rdynamic = subsys.getDynamic(motor, Direction.kReverse) ;
+
+            if (fquasi != null && rquasi != null && fdynamic != null && rdynamic != null) {
+                oi_.getXBoxController().leftBumper().and(oi_.getXBoxController().rightBumper()).and(oi_.getXBoxController().x()).whileTrue(fquasi);
+                oi_.getXBoxController().leftBumper().and(oi_.getXBoxController().rightBumper()).and(oi_.getXBoxController().y()).whileTrue(rquasi);
+                oi_.getXBoxController().leftBumper().and(oi_.getXBoxController().rightBumper()).and(oi_.getXBoxController().a()).whileTrue(fdynamic);
+                oi_.getXBoxController().leftBumper().and(oi_.getXBoxController().rightBumper()).and(oi_.getXBoxController().b()).whileTrue(rdynamic);
+            }
+        }
+        catch(Exception ex) {
+        }
+    }
+
+    private void standardDriveBaseBindings() {
+        //
         // Create the standard bindings between the gamepad and the drive base
         //
         db_.setDefaultCommand(
@@ -196,24 +243,22 @@ public abstract class XeroRobot extends LoggedRobot {
         oi_.getXBoxController().leftBumper().whileTrue(db_.applyRequest(() -> brake_, "brake").ignoringDisable(true)) ;
 
         oi_.getXBoxController().pov(0).whileTrue(db_.applyRequest(() -> pov_move_.withVelocityX(0.5).withVelocityY(0), "pov0")) ;
-        oi_.getXBoxController().pov(90).whileTrue(db_.applyRequest(() -> pov_move_.withVelocityX(0.0).withVelocityY(-0.5), "pov90")) ;        
+        oi_.getXBoxController().pov(90).whileTrue(db_.applyRequest(() -> pov_move_.withVelocityX(0.0).withVelocityY(-0.5), "pov90")) ;
         oi_.getXBoxController().pov(180).whileTrue(db_.applyRequest(() -> pov_move_.withVelocityX(-0.5).withVelocityY(0), "pov180")) ;
-        oi_.getXBoxController().pov(270).whileTrue(db_.applyRequest(() -> pov_move_.withVelocityX(0.0).withVelocityY(0.5), "pov270")) ;          
-
-        db_.registerTelemetry(telemetry_::telemeterize) ;        
+        oi_.getXBoxController().pov(270).whileTrue(db_.applyRequest(() -> pov_move_.withVelocityX(0.0).withVelocityY(0.5), "pov270")) ;
     }
 
     private void createDriveBase() {
-        
+
         if (isPracticeBot()) {
             //
             // Create the drivebase
             //
-            db_ = new CommandSwerveDrivetrain(this, 
-                                            TunerConstantsPractice.DrivetrainConstants, 
-                                            TunerConstantsPractice.FrontLeft, 
-                                            TunerConstantsPractice.FrontRight, 
-                                            TunerConstantsPractice.BackLeft, 
+            db_ = new CommandSwerveDrivetrain(this,
+                                            TunerConstantsPractice.DrivetrainConstants,
+                                            TunerConstantsPractice.FrontLeft,
+                                            TunerConstantsPractice.FrontRight,
+                                            TunerConstantsPractice.BackLeft,
                                             TunerConstantsPractice.BackRight);
 
 
@@ -222,17 +267,17 @@ public abstract class XeroRobot extends LoggedRobot {
             drive_ = new SwerveRequest.FieldCentric()
                             .withDeadband(TunerConstantsPractice.kSpeedAt12VoltsMps * 0.05)
                             .withRotationalDeadband(SwerveConstants.kMaxRotationalSpeed * 0.05)
-                            .withDriveRequestType(DriveRequestType.Velocity);                                              
+                            .withDriveRequestType(DriveRequestType.Velocity);
         }
         else {
             //
             // Create the drivebase
             //
-            db_ = new CommandSwerveDrivetrain(this, 
-                                            TunerConstantsCompetition.DrivetrainConstants, 
-                                            TunerConstantsCompetition.FrontLeft, 
-                                            TunerConstantsCompetition.FrontRight, 
-                                            TunerConstantsCompetition.BackLeft, 
+            db_ = new CommandSwerveDrivetrain(this,
+                                            TunerConstantsCompetition.DrivetrainConstants,
+                                            TunerConstantsCompetition.FrontLeft,
+                                            TunerConstantsCompetition.FrontRight,
+                                            TunerConstantsCompetition.BackLeft,
                                             TunerConstantsCompetition.BackRight);
 
 
@@ -241,10 +286,10 @@ public abstract class XeroRobot extends LoggedRobot {
             drive_ = new SwerveRequest.FieldCentric()
                             .withDeadband(TunerConstantsCompetition.kSpeedAt12VoltsMps * 0.05)
                             .withRotationalDeadband(SwerveConstants.kMaxRotationalSpeed * 0.05)
-                            .withDriveRequestType(DriveRequestType.Velocity);                                              
+                            .withDriveRequestType(DriveRequestType.Velocity);
         }
 
-        brake_ = new SwerveRequest.SwerveDriveBrake() ;        
+        brake_ = new SwerveRequest.SwerveDriveBrake() ;
         pov_move_ = new SwerveRequest.RobotCentric().withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     }
@@ -287,7 +332,7 @@ public abstract class XeroRobot extends LoggedRobot {
         }
         catch(IOException ex) {
         }
-    }    
+    }
 
     private void enableAdvantageKitLogger(boolean logToNetworkTables) {
         Logger.disableDeterministicTimestamps();
@@ -303,7 +348,7 @@ public abstract class XeroRobot extends LoggedRobot {
         Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
         Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
 
-        Logger.start() ;            
+        Logger.start() ;
     }
 
     private void enableMessageLogger() {
@@ -317,11 +362,11 @@ public abstract class XeroRobot extends LoggedRobot {
     }
 
     @Override
-    public void robotPeriodic() {          
+    public void robotPeriodic() {
         //
         // Runs the Scheduler.
         //
-        CommandScheduler.getInstance().run();   
+        CommandScheduler.getInstance().run();
 
         if (isSimulation()) {
             SimulationEngine engine = SimulationEngine.getInstance() ;
@@ -329,7 +374,7 @@ public abstract class XeroRobot extends LoggedRobot {
                 engine.run(getPeriod());
             }
         }
-      
+
     }
 
     public void registerSubsystem(String name, ISubsystemSim subsystem) {
@@ -370,7 +415,7 @@ public abstract class XeroRobot extends LoggedRobot {
     @Override
     public void disabledPeriodic() {
         createAutoModes();
-    }    
+    }
 
     protected void enableMessages() {
     }

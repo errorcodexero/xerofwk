@@ -9,7 +9,6 @@ import org.xero1425.simulator.engine.ModelFactory;
 import org.xero1425.simulator.engine.SimulationEngine;
 import org.xero1425.subsystems.oi.OISubsystem;
 
-import edu.wpi.first.apriltag.AprilTagFields;
 import frc.robot.commands.automodes.test.LEDTestAutoModeCommand;
 import frc.robot.subsystems.RobotOISubsystem;
 
@@ -27,7 +26,6 @@ public class Robot extends XeroRobot {
 
     public Robot() {
         super(kLogToNetworkTables) ;
-        setFieldLayout(AprilTagFields.k2024Crescendo.loadAprilTagLayoutField()) ;        
     }
 
     /**
@@ -85,5 +83,18 @@ public class Robot extends XeroRobot {
     @Override
     protected OISubsystem createOISubsystem() {
         return new RobotOISubsystem(this) ;
+    }
+
+    @Override
+    protected void robotSpecificBindings() {
+    }
+
+    @Override
+    protected String getCharSubsystem() {
+        return null ;
+    }
+
+    protected String getCharMotor() {
+        return null ;
     }
 }
