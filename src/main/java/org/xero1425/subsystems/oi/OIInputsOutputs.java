@@ -6,11 +6,15 @@ public interface OIInputsOutputs {
     @AutoLog
     public static class OIInputs {
         public boolean buttons_[] = new boolean[32] ;
+        public String ledstates_ = "" ;
     }
 
     public default void updateInputs(OIInputs inputs) {
     }
 
-    public default void setLED(int index, boolean on) {
+    public default void updateLEDs() {
+    }
+
+    public default void setLEDState(int index, OISubsystem.LEDState st) {
     }
 }

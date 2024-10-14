@@ -7,7 +7,7 @@ package frc.robot;
 import org.xero1425.base.XeroRobot;
 import org.xero1425.subsystems.oi.OISubsystem;
 
-import frc.robot.subsystems.AllegroOISubsystem;
+import frc.robot.subsystems.RobotOISubsystem;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -76,6 +76,6 @@ public class Robot extends XeroRobot {
 
     @Override
     protected OISubsystem createOISubsystem() {
-        return new AllegroOISubsystem(this) ;
+        return new RobotOISubsystem(this) ;
     }
 }

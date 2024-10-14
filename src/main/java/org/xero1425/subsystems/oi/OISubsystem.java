@@ -12,14 +12,23 @@ import org.xero1425.misc.SettingsValue;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public abstract class OISubsystem extends XeroSubsystem {
+    public enum LEDState {
+        On,
+        Off,
+        SlowBlink,
+        FastBlink
+    }
+
     final private double SlowFactor = 0.1 ;
     final private int MaxOIButtons = 32 ;
+    final private int MaxLEDs = 16 ;
 
     private OIInputsOutputs ios_ ;
     private OIInputsAutoLogged inputs_ ;
@@ -27,6 +36,7 @@ public abstract class OISubsystem extends XeroSubsystem {
     private boolean enabled_ ;
     private CommandXboxController ctrl_ ;
     private int oiport_ ;
+    private GenericHID oihid_ ;
 
     private boolean isRumbling ;
     private double rumble_ ;
@@ -38,7 +48,9 @@ public abstract class OISubsystem extends XeroSubsystem {
     public OISubsystem(XeroRobot robot, String name, int gp, int oi) {
         super(robot, name) ;
 
-        ios_ = new OIInputsOutputsHID(oi) ;
+        oihid_ = new GenericHID(oi) ;
+
+        ios_ = new OIInputsOutputsHID(oihid_, MaxOIButtons, MaxLEDs) ;
         inputs_ = new OIInputsAutoLogged() ;
         
         ctrl_ = new CommandXboxController(gp) ;
@@ -58,12 +70,17 @@ public abstract class OISubsystem extends XeroSubsystem {
         enabled_ = false ;
     }
 
+    public void setLEDState(int led, LEDState st) {
+        ios_.setLEDState(led, st) ;
+    }
+
     @Override
     public void periodic() {
         startPeriodic();
 
         ios_.updateInputs(inputs_);
-
+        Logger.processInputs("oi", inputs_);
+        
         if (isRumbling) {
             if (Timer.getFPGATimestamp() > stop_rumble_time_) {
                 rumble_ = 0.0 ;
@@ -77,6 +94,8 @@ public abstract class OISubsystem extends XeroSubsystem {
 
         Logger.recordOutput("oi:gamepad", "[" + gp + "]") ;
         Logger.recordOutput("oi:oibuttons", "[" + oi + "]") ;
+
+        ios_.updateLEDs() ;
 
         endPeriodic();
     }
@@ -129,7 +148,18 @@ public abstract class OISubsystem extends XeroSubsystem {
     }
 
     protected String getOIButtonString() {
-        return "" ;
+        String ret = "" ;
+
+        for(String key : buttons_.keySet()) {
+            int button = buttons_.get(key) ;
+            if (inputs_.buttons_[button]) {
+                if (ret.length() > 0) {
+                    ret += "," ;
+                }
+                ret += key ;
+            }
+        }
+        return ret ;
     }
 
     private String findFunctionByButton(int button) {
