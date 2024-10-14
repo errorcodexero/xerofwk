@@ -13,6 +13,8 @@ import java.util.stream.Stream;
 
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.xero1425.misc.MessageDestination;
 import org.xero1425.misc.MessageDestinationThumbFile;
 import org.xero1425.misc.MessageLogger;
@@ -39,6 +41,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.BuildConstants;
 import frc.robot.generated.SwerveConstants;
 import frc.robot.generated.TunerConstantsCompetition;
 import frc.robot.generated.TunerConstantsPractice;
@@ -75,7 +78,7 @@ public abstract class XeroRobot extends LoggedRobot {
     //
     private Telemetry telemetry_ ;
 
-    public XeroRobot() {
+    public XeroRobot(boolean logToNetworkTables) {
         if (robot_ != null) {
             throw new RuntimeException("XeroRobot is a singleton class") ;
         }
@@ -101,6 +104,7 @@ public abstract class XeroRobot extends LoggedRobot {
         }
 
         enableMessageLogger();
+        enableAdvantageKitLogger(logToNetworkTables) ;
 
         if (RobotBase.isSimulation()) {
             String str = SimArgs.InputFileName;
@@ -276,6 +280,23 @@ public abstract class XeroRobot extends LoggedRobot {
         catch(IOException ex) {
         }
     }    
+
+    private void enableAdvantageKitLogger(boolean logToNetworkTables) {
+        Logger.disableDeterministicTimestamps();
+
+        if (XeroRobot.isSimulation() || logToNetworkTables) {
+            Logger.addDataReceiver(new NT4Publisher());
+        }
+        Logger.addDataReceiver(new WPILOGWriter()) ;
+
+        Logger.recordMetadata("ProjectName", BuildConstants.MAVEN_NAME);
+        Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
+        Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
+        Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
+        Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
+
+        Logger.start() ;            
+    }
 
     private void enableMessageLogger() {
         MessageDestination dest ;

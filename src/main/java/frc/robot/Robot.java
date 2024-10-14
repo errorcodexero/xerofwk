@@ -19,8 +19,10 @@ import frc.robot.subsystems.AllegroOISubsystem;
  * project.
  */
 public class Robot extends XeroRobot {
+    private final static boolean kLogToNetworkTables = true ;
+
     public Robot() {
-        super() ;
+        super(kLogToNetworkTables) ;
     }
 
     /**
@@ -74,6 +76,6 @@ public class Robot extends XeroRobot {
 
     @Override
     protected OISubsystem createOISubsystem() {
-        return new AllegroOISubsystem() ;
+        return new AllegroOISubsystem(this) ;
     }
 }
