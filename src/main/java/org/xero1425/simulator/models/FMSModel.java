@@ -79,6 +79,15 @@ public class FMSModel extends SimulationModel {
         }
         DriverStationSim.setFmsAttached(attached);
 
+        try {
+            if (hasProperty("ds")) {
+                attached = getBooleanProperty("ds") ;
+            }
+        }
+        catch(Exception ex) {
+        }
+        DriverStationSim.setDsAttached(attached);
+
         if (hasProperty("alliance")) {
             AllianceStationID id = AllianceStationID.Red1 ;
             SettingsValue v = getProperty("alliance") ;
@@ -261,6 +270,22 @@ public class FMSModel extends SimulationModel {
                 }
             }
         }
+        else if (name.equals("ds")) {
+            if (!value.isBoolean()) {
+                final MessageLogger logger = getEngine().getMessageLogger() ;
+                logger.startMessage(MessageType.Error) ;
+                logger.add("event: model ").addQuoted(getModelName());
+                logger.add(" instance ").addQuoted(getInstanceName());
+                logger.add(" event name ").addQuoted(name);
+                logger.add(" value is not a boolean").endMessage();
+            }
+            else {
+                try {
+                    DriverStationSim.setDsAttached(value.getBoolean());
+                } catch (final BadParameterTypeException e) {
+                }
+            }
+        }        
         else if (name.equals("alliance")) {
             AllianceStationID id = AllianceStationID.Red1 ;
             if (value.isString()) {

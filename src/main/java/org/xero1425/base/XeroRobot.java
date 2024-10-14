@@ -132,6 +132,14 @@ public abstract class XeroRobot extends LoggedRobot {
     protected abstract void addRobotSimulationModels() ;
     protected abstract OISubsystem createOISubsystem() ;
 
+    public OISubsystem getOISubsystem() {
+        return oi_ ;
+    }
+
+    public CommandSwerveDrivetrain getDriveBase() {
+        return db_ ;
+    }
+
     public void startPeriodic(String name) {
         periodic_times_.put(name, Timer.getFPGATimestamp()) ;
     }

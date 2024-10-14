@@ -5,8 +5,12 @@
 package frc.robot;
 
 import org.xero1425.base.XeroRobot;
+import org.xero1425.simulator.engine.ModelFactory;
+import org.xero1425.simulator.engine.SimulationEngine;
 import org.xero1425.subsystems.oi.OISubsystem;
 
+import edu.wpi.first.apriltag.AprilTagFields;
+import frc.robot.commands.automodes.test.LEDTestAutoModeCommand;
 import frc.robot.subsystems.RobotOISubsystem;
 
 /**
@@ -23,6 +27,7 @@ public class Robot extends XeroRobot {
 
     public Robot() {
         super(kLogToNetworkTables) ;
+        setFieldLayout(AprilTagFields.k2024Crescendo.loadAprilTagLayoutField()) ;        
     }
 
     /**
@@ -58,20 +63,23 @@ public class Robot extends XeroRobot {
 
     @Override
     public void createCompetitionAutoModes() {
-    }    
+        addAutoMode(new LEDTestAutoModeCommand(this));
+    }
 
     @Override
     public String getSimulationFileName() {
-        return null ;
+        return "oiled" ;
     }
 
     @Override
     public String getSimulationAutoMode() {
-        return null ;
+        return "LEDTest" ;
     }
 
     @Override
     public void addRobotSimulationModels() {
+        ModelFactory factory = SimulationEngine.getInstance().getModelFactory();
+        factory.registerModel("robot-oi", "frc.models.RobotOIModel");         
     }
 
     @Override

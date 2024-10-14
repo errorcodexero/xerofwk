@@ -6,5 +6,11 @@ import org.xero1425.subsystems.oi.OISubsystem;
 public class RobotOISubsystem extends OISubsystem {
     public RobotOISubsystem(XeroRobot robot) {
         super(robot, "OI", OIConstants.kDriverControllerPort, OIConstants.kOIControllerPort) ;
+
+        try {
+            mapButton("eject", 1) ;
+        } catch (Exception ex) {
+            
+        }
     }
 }

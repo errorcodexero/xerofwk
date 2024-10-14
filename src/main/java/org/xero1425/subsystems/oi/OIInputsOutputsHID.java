@@ -47,6 +47,10 @@ public class OIInputsOutputsHID implements OIInputsOutputs {
             inputs.buttons_[i - 1] = DriverStation.getStickButton(port_, i) ;
         }
 
+        for(int i = 1 ; i <= max_leds_ ; i++) {
+            inputs.leds_[i-1] = led_onoff_[i - 1] ;
+        }
+
         inputs.ledstates_ = getLEDStatesString() ;
     }
 

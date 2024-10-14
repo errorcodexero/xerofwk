@@ -6,6 +6,7 @@ public interface OIInputsOutputs {
     @AutoLog
     public static class OIInputs {
         public boolean buttons_[] = new boolean[32] ;
+        public boolean leds_[] = new boolean[16] ;
         public String ledstates_ = "" ;
     }
 
