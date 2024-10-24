@@ -26,6 +26,7 @@ import org.xero1425.simulator.engine.SimulationEngine;
 import org.xero1425.subsystems.oi.OISubsystem;
 import org.xero1425.subsystems.swerve.CommandSwerveDrivetrain;
 import org.xero1425.subsystems.swerve.Telemetry;
+import org.xero1425.subsystems.vision.AprilTagVisionSubsystem;
 
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
@@ -66,12 +67,14 @@ public abstract class XeroRobot extends LoggedRobot {
     private AprilTagFieldLayout layout_ ;
     private boolean auto_modes_created_ ;
 
-    private CommandSwerveDrivetrain db_ ;
+    protected CommandSwerveDrivetrain db_ ;
     private SwerveRequest.SwerveDriveBrake brake_ ;
     private SwerveRequest.RobotCentric pov_move_;
     private SwerveRequest.FieldCentric drive_ ;
 
-    private OISubsystem oi_ ;
+    protected AprilTagVisionSubsystem vision_;
+
+    protected OISubsystem oi_ ;
 
     private String char_subsystem_ ;
     private String char_motor_ ;
@@ -138,10 +141,12 @@ public abstract class XeroRobot extends LoggedRobot {
     protected abstract String getPracticeSerialNumber() ;
     protected abstract void createCompetitionAutoModes() ;
     protected abstract void addRobotSimulationModels() ;
-    protected abstract OISubsystem createOISubsystem() ;
     protected abstract void robotSpecificBindings() ;
     protected abstract String getCharSubsystem() ;
     protected abstract String getCharMotor() ;
+
+    protected abstract OISubsystem createOISubsystem() ;
+    protected abstract AprilTagVisionSubsystem createVisionSubsystem();
 
     public OISubsystem getOISubsystem() {
         return oi_ ;
@@ -193,6 +198,11 @@ public abstract class XeroRobot extends LoggedRobot {
         // Create the drive base
         //
         createDriveBase() ;
+
+        /**
+         * Create Vision Subsystem
+         */
+        vision_ = createVisionSubsystem();
 
         char_subsystem_ = getCharSubsystem() ;
         char_motor_ = getCharMotor() ;
