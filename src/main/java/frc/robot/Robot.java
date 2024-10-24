@@ -46,7 +46,7 @@ public class Robot extends XeroRobot {
     @Override
     public void robotInit() {
         //
-        // The base class will create the drive base and the drive controller.
+        // The base class will create the generic subsystems based on the methods you supply.
         // It assumes an XBox controller for now.
         //
         super.robotInit() ;
