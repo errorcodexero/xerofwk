@@ -1,27 +1,14 @@
 package org.xero1425.base;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
-import org.xero1425.misc.MessageDestination;
-import org.xero1425.misc.MessageDestinationThumbFile;
-import org.xero1425.misc.MessageLogger;
-import org.xero1425.misc.MessageType;
 import org.xero1425.misc.SimArgs;
-import org.xero1425.paths.XeroPathManager;
-import org.xero1425.paths.XeroPathType;
 import org.xero1425.simulator.engine.SimulationEngine;
 import org.xero1425.subsystems.oi.OISubsystem;
 import org.xero1425.subsystems.swerve.CommandSwerveDrivetrain;
@@ -54,11 +41,6 @@ public abstract class XeroRobot extends LoggedRobot {
 
     private static XeroRobot robot_ = null ;
 
-    // The path following paths
-    private XeroPathManager paths_ ;
-
-    private MessageLogger logger_ ;
-    private RobotPaths robot_paths_ ;
     private XeroAutoCommand auto_mode_ ;
     private List<XeroAutoCommand> automodes_ ;
     private SendableChooser<XeroAutoCommand> chooser_ ;
@@ -105,16 +87,6 @@ public abstract class XeroRobot extends LoggedRobot {
         automodes_ = new ArrayList<>() ;
         auto_mode_ = null;
 
-        robot_paths_ = new RobotPaths(RobotBase.isSimulation(), getName());
-        paths_ = new XeroPathManager(robot_paths_.pathsDirectory(), XeroPathType.SwerveHolonomic) ;
-        try {
-            loadPathsFile();
-        } catch (Exception ex) {
-            logger_.startMessage(MessageType.Error) ;
-            logger_.add("caught exception reading path files -").add(ex.getMessage()).endMessage();
-        }
-
-        enableMessageLogger();
         enableAdvantageKitLogger(logToNetworkTables) ;
 
         if (RobotBase.isSimulation()) {
@@ -127,7 +99,7 @@ public abstract class XeroRobot extends LoggedRobot {
                 System.out.println("Not initializing the Xero1425 Simulation engine - assuming Romi robot") ;
             }
             else {
-                SimulationEngine.initializeSimulator(this, logger_);
+                SimulationEngine.initializeSimulator(this);
                 addRobotSimulationModels() ;
                 SimulationEngine.getInstance().initAll(str) ;
             }
@@ -171,11 +143,6 @@ public abstract class XeroRobot extends LoggedRobot {
 
     public ISubsystemSim getSubsystemByName(String name) {
         return subsystems_.get(name) ;
-    }
-
-
-    public XeroPathManager getPathManager() {
-        return paths_ ;
     }
 
     public void robotInit() {
@@ -327,23 +294,6 @@ public abstract class XeroRobot extends LoggedRobot {
         automodes_.add(mode) ;
     }
 
-    /// \brief load the paths file from the paths file directory
-    protected void loadPathsFile() throws Exception {
-        try (Stream<Path> walk = Files.walk(Paths.get(paths_.getBaseDir()))) {
-            List<String> result = walk.map(x -> x.toString()).filter(f -> f.endsWith("-main.csv")).collect(Collectors.toList());
-            for(String name : result) {
-                int index = name.lastIndexOf(File.separator) ;
-                if (index != -1) {
-                    name = name.substring(index + 1) ;
-                    name = name.substring(0, name.length() - 9) ;
-                    paths_.loadPath(name) ;
-                }
-            }
-        }
-        catch(IOException ex) {
-        }
-    }
-
     private void enableAdvantageKitLogger(boolean logToNetworkTables) {
         Logger.disableDeterministicTimestamps();
 
@@ -359,16 +309,6 @@ public abstract class XeroRobot extends LoggedRobot {
         Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
 
         Logger.start() ;
-    }
-
-    private void enableMessageLogger() {
-        MessageDestination dest ;
-
-        logger_ = MessageLogger.getTheMessageLogger() ;
-        logger_.setTimeSource(new RobotTimeSource());
-
-        dest = new MessageDestinationThumbFile(robot_paths_.logFileDirectory(), 250, RobotBase.isSimulation());
-        logger_.addDestination(dest);
     }
 
     @Override

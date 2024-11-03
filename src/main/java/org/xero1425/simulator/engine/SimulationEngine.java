@@ -26,8 +26,7 @@ public class SimulationEngine {
     private int failed_count_ ;
     private int passed_count_ ;    
 
-    private SimulationEngine(XeroRobot robot, MessageLogger logger) {
-        logger_ = logger ;
+    private SimulationEngine(XeroRobot robot) {
         robot_ = robot ;
         logger_id_ = logger_.registerSubsystem(LoggerName);
 
@@ -44,8 +43,8 @@ public class SimulationEngine {
         return the_one_;
     }
 
-    static public void initializeSimulator(XeroRobot robot, MessageLogger logger) {
-        the_one_ = new SimulationEngine(robot, logger);
+    static public void initializeSimulator(XeroRobot robot) {
+        the_one_ = new SimulationEngine(robot);
     }
 
     public void addAssertError() {

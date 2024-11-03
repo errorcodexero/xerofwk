@@ -15,7 +15,6 @@ import org.xero1425.base.LimelightHelpers.PoseEstimate;
 import org.xero1425.math.Pose2dWithRotation;
 import org.xero1425.math.XeroMath;
 import org.xero1425.misc.SettingsValue;
-import org.xero1425.paths.XeroPath;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
@@ -256,11 +255,6 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
     public void driveTo(String pathname, Pose2d[] imd, Pose2dWithRotation dest, double maxv, double maxa, double pre_rot_time, double post_rot_time, double to) {
         follower_ = new HolonomicPathFollower(createHolonimicPathFollowerConfig());
         follower_.driveTo(pathname, imd, dest, maxv, maxa, pre_rot_time, post_rot_time, to);
-    }
-
-    public void drivePathWithTraj(XeroPath path, double maxv, double maxa, double pre_rot_time, double post_rot_time, double to) {
-        follower_ = new HolonomicPathFollower(createHolonimicPathFollowerConfig());
-        follower_.drivePathWithTraj(path, maxv, maxa, pre_rot_time, post_rot_time, to);        
     }
 
     public void stopPath() {

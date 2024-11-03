@@ -74,7 +74,7 @@ public final class MessageLogger
     public static MessageLogger logger_ = null ;
 
     /// \brief Create a new message logger object
-    MessageLogger()
+    private MessageLogger()
     {
         subsystems_ = new HashMap<Integer, String>() ;
         subsystem_index_ = 1 ;

@@ -8,8 +8,6 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 import org.xero1425.math.Pose2dWithRotation;
-import org.xero1425.paths.XeroPath;
-import org.xero1425.paths.XeroPathSegment;
 
 import edu.wpi.first.math.controller.HolonomicDriveController;
 import edu.wpi.first.math.controller.PIDController;
@@ -127,26 +125,6 @@ public class HolonomicPathFollower {
 
         driving_ = true ;
         last_pos_ = start_pose_.getTranslation() ;
-    }
-
-    public void drivePathWithTraj(XeroPath path, double maxv, double maxa, double pre_rot_time, double post_rot_time, double to) {
-        XeroPathSegment seg = path.getSegment(0, path.getTrajectoryEntryCount() - 1) ;
-        Pose2dWithRotation dest = new Pose2dWithRotation(seg.getX(), seg.getY(), 
-                                        Rotation2d.fromDegrees(seg.getHeading()), Rotation2d.fromDegrees(seg.getRotation())) ;
-
-        // The number of points in the intermediate points array
-        List<Pose2d> immd = new ArrayList<>() ;
-
-        // The starting point along the generated path for the intermediate points, the current
-        // robot pose is the first point
-        int index = 5 ;
-        while (index < path.getTrajectoryEntryCount()) {
-            seg = path.getSegment(0, index) ;
-            immd.add(new Pose2d(seg.getX(), seg.getY(), Rotation2d.fromDegrees(seg.getHeading()))) ;
-            index += 5 ;
-        }
-
-        driveTo(path.getName(), immd.toArray(new Pose2d[0]), dest, maxv, maxa, pre_rot_time, post_rot_time, to) ;
     }
 
     public boolean didTimeout() {
